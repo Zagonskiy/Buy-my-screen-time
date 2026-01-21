@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Currency</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Стиль счетчика */
+        #time-counter {
+            font-size: 4rem;
+            font-weight: bold;
+            transition: all 1s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Эффект пружины */
+            position: absolute;
+            top: 40%; /* Изначально по центру */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        /* Класс, который применяется после покупки */
+        #time-counter.cornered {
+            top: 20px;
+            left: 20px;
+            font-size: 1.5rem;
+            transform: translate(0, 0);
+        }
+
+        /* Кнопка */
+        #buy-btn {
+            margin-top: 100px; /* Отступ от центра */
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: transparent;
+            border: 2px solid #fff;
+            color: #fff;
+            cursor: pointer;
+            transition: opacity 0.3s, transform 0.1s;
+        }
+
+        #buy-btn:active {
+            transform: scale(0.95);
+        }
+
+        #buy-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: #555;
+            color: #555;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="time-counter">0</div>
+    
+    <button id="buy-btn" disabled>Купить (30 сек)</button>
+
+    <script>
+        let screenTime = 0;
+        let isInterfaceUnlocked = false; // Флаг, куплен ли интерфейс
+
+        const counterElement = document.getElementById('time-counter');
+        const buyBtn = document.getElementById('buy-btn');
+        const COST = 30;
+
+        // 1. Основной цикл времени
+        setInterval(() => {
+            screenTime++;
+            updateUI();
+        }, 1000);
+
+        // 2. Обновление интерфейса
+        function updateUI() {
+            counterElement.textContent = screenTime;
+
+            // Если кнопка еще существует, проверяем доступность
+            if (!isInterfaceUnlocked && buyBtn) {
+                if (screenTime >= COST) {
+                    buyBtn.disabled = false;
+                    buyBtn.textContent = `Купить за ${COST} сек`;
+                } else {
+                    buyBtn.disabled = true;
+                    buyBtn.textContent = `Нужно ${COST} сек (еще ${COST - screenTime})`;
+                }
+            }
+        }
+
+        // 3. Логика покупки
+        buyBtn.addEventListener('click', () => {
+            if (screenTime >= COST) {
+                // Списываем время
+                screenTime -= COST;
+                updateUI();
+
+                // Запускаем анимацию счетчика
+                counterElement.classList.add('cornered');
+                
+                // Скрываем/удаляем кнопку
+                buyBtn.style.opacity = '0';
+                setTimeout(() => buyBtn.remove(), 500); // Удаляем из DOM после анимации
+
+                isInterfaceUnlocked = true;
+                
+                // Тут можно вызывать функцию загрузки остального контента
+                console.log("Интерфейс разблокирован!");
+            }
+        });
+    </script>
+</body>
+</html>
