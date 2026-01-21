@@ -17,6 +17,7 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
+            /* Плавная смена цветов */
             transition: background-color 0.5s ease, color 0.5s ease;
         }
 
@@ -27,7 +28,7 @@
 
         /* --- Счётчик времени --- */
         #time-counter {
-            font-size: 3rem; /* Чуть меньше, чтобы влезали длинные строки */
+            font-size: 3rem;
             font-weight: bold;
             transition: all 1s cubic-bezier(0.68, -0.55, 0.27, 1.55);
             position: absolute;
@@ -37,11 +38,11 @@
             z-index: 10;
             user-select: none;
             cursor: default;
-            white-space: nowrap; /* Чтобы время не переносилось */
+            white-space: nowrap;
             text-align: center;
         }
 
-        /* Класс, когда счетчик улетает в угол */
+        /* Состояние: куплен интерфейс (в углу) */
         #time-counter.cornered {
             top: 20px;
             left: 20px;
@@ -60,7 +61,7 @@
             cursor: pointer;
             text-decoration: underline;
             transition: opacity 0.3s;
-            opacity: 0.3; /* Изначально тусклая */
+            opacity: 0.3;
         }
 
         #buy-btn:disabled {
@@ -69,7 +70,7 @@
         }
         
         #buy-btn:not(:disabled) {
-            opacity: 1; /* Яркая когда доступна */
+            opacity: 1;
             font-weight: bold;
         }
 
@@ -139,15 +140,16 @@
     <button id="buy-btn" disabled>Открыть интерфейс (30 сек)</button>
 
     <script>
-        // Состояние
-        let screenTime = 0;
-        let isInterfaceUnlocked = false;
-        let isThemeSwitcherUnlocked = false;
-        let isDarkMode = false;
+        // --- ЗАГРУЗКА ИЗ ПАМЯТИ ---
+        // Пытаемся достать данные, если их нет — ставим значения по умолчанию
+        let screenTime = Number(localStorage.getItem('timeXP_value')) || 0;
+        let isInterfaceUnlocked = localStorage.getItem('timeXP_interface') === 'true';
+        let isThemeSwitcherUnlocked = localStorage.getItem('timeXP_themeUnlock') === 'true';
+        let isDarkMode = localStorage.getItem('timeXP_darkMode') === 'true';
 
         // Требования
         const REQ_INTERFACE = 30;
-        const REQ_THEME = 120; // 2 минуты
+        const REQ_THEME = 120; 
 
         // DOM
         const counterElement = document.getElementById('time-counter');
@@ -156,6 +158,40 @@
         const themeSwitchArea = document.getElementById('theme-switch-area');
         const sunIcon = document.getElementById('sun-icon');
         const moonIcon = document.getElementById('moon-icon');
+
+        // --- ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЯ ПРИ ЗАГРУЗКЕ ---
+        function init() {
+            // 1. Применяем тему сразу
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+
+            // 2. Если интерфейс уже куплен
+            if (isInterfaceUnlocked) {
+                counterElement.classList.add('cornered');
+                if(buyBtn) buyBtn.remove(); // Удаляем кнопку, чтобы не мелькала
+            }
+
+            // 3. Если переключатель темы уже куплен
+            if (isThemeSwitcherUnlocked) {
+                themeLockBtn.classList.add('hidden');
+                themeSwitchArea.classList.remove('hidden');
+            }
+
+            // Обновляем текст счетчика сразу
+            counterElement.textContent = formatTime(screenTime);
+            updateUI();
+        }
+
+        // --- СОХРАНЕНИЕ ---
+        function saveProgress() {
+            localStorage.setItem('timeXP_value', screenTime);
+            localStorage.setItem('timeXP_interface', isInterfaceUnlocked);
+            localStorage.setItem('timeXP_themeUnlock', isThemeSwitcherUnlocked);
+            localStorage.setItem('timeXP_darkMode', isDarkMode);
+        }
 
         // --- Форматирование времени ---
         function formatTime(totalSeconds) {
@@ -173,7 +209,6 @@
             if (days > 0) parts.push(days + " д");
             if (hours > 0) parts.push(hours + " ч");
             if (minutes > 0) parts.push(minutes + " мин");
-            // Секунды показываем всегда, если это единственная единица, или в дополнение к минутам
             if (seconds > 0 || parts.length === 0) parts.push(seconds + " сек");
 
             return parts.join(' ');
@@ -181,20 +216,18 @@
 
         // --- Основной цикл ---
         setInterval(() => {
-            // Тикает только если вкладка активна
             if (!document.hidden) {
                 screenTime++;
                 updateUI();
+                saveProgress(); // Сохраняем каждую секунду
             }
         }, 1000);
 
         function updateUI() {
-            // Обновляем текст счетчика
             counterElement.textContent = formatTime(screenTime);
 
-            // 1. Кнопка интерфейса
+            // Кнопка интерфейса (проверяем существование, т.к. могли удалить)
             if (!isInterfaceUnlocked && buyBtn) {
-                // Текст статичный, меняется только состояние
                 if (screenTime >= REQ_INTERFACE) {
                     buyBtn.disabled = false;
                 } else {
@@ -202,7 +235,7 @@
                 }
             }
 
-            // 2. Замок темы
+            // Замок темы
             if (!isThemeSwitcherUnlocked) {
                  if (screenTime >= REQ_THEME) {
                      themeLockBtn.classList.add('can-afford');
@@ -213,26 +246,28 @@
             }
         }
 
-        // --- Действия (XP не тратится) ---
+        // --- Обработчики ---
 
-        buyBtn.addEventListener('click', () => {
-            if (screenTime >= REQ_INTERFACE) {
-                // Анимация
-                counterElement.classList.add('cornered');
-                
-                // Исчезновение кнопки
-                buyBtn.style.opacity = '0';
-                buyBtn.style.cursor = 'default';
-                setTimeout(() => buyBtn.remove(), 500);
-                
-                isInterfaceUnlocked = true;
-            }
-        });
+        if(buyBtn) {
+            buyBtn.addEventListener('click', () => {
+                if (screenTime >= REQ_INTERFACE) {
+                    counterElement.classList.add('cornered');
+                    buyBtn.style.opacity = '0';
+                    buyBtn.style.cursor = 'default';
+                    
+                    isInterfaceUnlocked = true;
+                    saveProgress(); // Сохраняем покупку
+
+                    setTimeout(() => buyBtn.remove(), 500);
+                }
+            });
+        }
 
         themeLockBtn.addEventListener('click', () => {
             if (!isThemeSwitcherUnlocked && screenTime >= REQ_THEME) {
                 isThemeSwitcherUnlocked = true;
-                
+                saveProgress(); // Сохраняем покупку
+
                 themeLockBtn.classList.add('hidden');
                 themeSwitchArea.classList.remove('hidden');
             }
@@ -243,10 +278,15 @@
             document.body.classList.toggle('dark-mode', isDarkMode);
             sunIcon.classList.toggle('hidden', isDarkMode);
             moonIcon.classList.toggle('hidden', !isDarkMode);
+            
+            saveProgress(); // Сохраняем выбор темы
         }
 
         sunIcon.addEventListener('click', toggleTheme);
         moonIcon.addEventListener('click', toggleTheme);
+
+        // Запуск инициализации при загрузке страницы
+        init();
 
     </script>
 </body>
