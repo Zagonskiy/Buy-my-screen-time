@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Currency Project</title>
+    <title>Time Experience Project</title>
     <style>
         /* Базовая светлая тема */
         body {
-            background-color: #f0f0f0; /* Светлый фон */
-            color: #222222; /* Темный текст */
+            background-color: #f0f0f0;
+            color: #222222;
             font-family: 'Courier New', monospace;
             display: flex;
             flex-direction: column;
@@ -17,11 +17,9 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
-            /* Анимация переключения темы */
             transition: background-color 0.5s ease, color 0.5s ease;
         }
 
-        /* Темная тема (активируется классом) */
         body.dark-mode {
             background-color: #1a1a1a;
             color: #ffffff;
@@ -38,6 +36,7 @@
             transform: translate(-50%, -50%);
             z-index: 10;
             user-select: none;
+            cursor: default;
         }
 
         #time-counter.cornered {
@@ -47,16 +46,16 @@
             transform: translate(0, 0);
         }
 
-        /* --- Первая кнопка (без рамок) --- */
+        /* --- Первая кнопка --- */
         #buy-btn {
             margin-top: 100px;
             padding: 10px;
             font-size: 1.2rem;
             background: transparent;
-            border: none; /* Убрали рамку */
-            color: inherit; /* Цвет берется у родителя (body) */
+            border: none;
+            color: inherit;
             cursor: pointer;
-            text-decoration: underline; /* Чтобы было похоже на ссылку */
+            text-decoration: underline;
             transition: opacity 0.3s;
         }
 
@@ -75,23 +74,27 @@
             z-index: 20;
         }
 
-        /* Элемент магазина (замок) */
+        /* Элемент замка */
         .shop-item-lock {
             opacity: 0.4;
             cursor: not-allowed;
             transition: opacity 0.3s, transform 0.1s;
             user-select: none;
         }
-        /* Когда доступно для покупки */
+        
         .shop-item-lock.can-afford {
             opacity: 1;
             cursor: pointer;
+            /* Добавляем пульсацию, чтобы привлечь внимание, когда доступно */
+            animation: pulse 2s infinite;
         }
-        .shop-item-lock.can-afford:active {
-             transform: scale(0.9);
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
 
-        /* Переключатель темы */
         .theme-toggle-icon {
             cursor: pointer;
             user-select: none;
@@ -102,7 +105,6 @@
             transform: scale(1.1);
         }
 
-        /* Утилиты */
         .hidden {
             display: none !important;
         }
@@ -125,17 +127,17 @@
     <button id="buy-btn" disabled>Открыть интерфейс (30 сек)</button>
 
     <script>
-        // Состояние игры
+        // Состояние
         let screenTime = 0;
         let isInterfaceUnlocked = false;
         let isThemeSwitcherUnlocked = false;
         let isDarkMode = false;
 
-        // Константы стоимости
-        const COST_INTERFACE = 30;
-        const COST_THEME = 120; // 2 минуты
+        // Пороги (Requirements)
+        const REQ_INTERFACE = 30;
+        const REQ_THEME = 120; // 2 минуты
 
-        // DOM элементы
+        // DOM
         const counterElement = document.getElementById('time-counter');
         const buyBtn = document.getElementById('buy-btn');
         const themeLockBtn = document.getElementById('theme-lock');
@@ -143,70 +145,73 @@
         const sunIcon = document.getElementById('sun-icon');
         const moonIcon = document.getElementById('moon-icon');
 
-        // --- Основной цикл ---
+        // --- Основной цикл времени с проверкой активности вкладки ---
         setInterval(() => {
-            screenTime++;
-            updateUI();
+            // document.hidden возвращает true, если вкладка не активна
+            if (!document.hidden) {
+                screenTime++;
+                updateUI();
+            }
         }, 1000);
 
-        // --- Функция обновления интерфейса ---
         function updateUI() {
             counterElement.textContent = screenTime;
 
-            // 1. Логика кнопки интерфейса
+            // 1. Проверка кнопки интерфейса
             if (!isInterfaceUnlocked && buyBtn) {
-                if (screenTime >= COST_INTERFACE) {
+                if (screenTime >= REQ_INTERFACE) {
                     buyBtn.disabled = false;
-                    buyBtn.textContent = `Открыть интерфейс за ${COST_INTERFACE} сек`;
+                    buyBtn.textContent = `[ Открыть интерфейс ]`; // Скобки как намек на действие
                 } else {
                     buyBtn.disabled = true;
-                    buyBtn.textContent = `Нужно ${COST_INTERFACE} сек (еще ${COST_INTERFACE - screenTime})`;
+                    // Показываем сколько осталось
+                    buyBtn.textContent = `Ждем... ${REQ_INTERFACE - screenTime}`; 
                 }
             }
 
-            // 2. Логика замка темы в углу
+            // 2. Проверка замка темы
             if (!isThemeSwitcherUnlocked) {
-                 if (screenTime >= COST_THEME) {
+                 if (screenTime >= REQ_THEME) {
                      themeLockBtn.classList.add('can-afford');
+                     themeLockBtn.textContent = "🔓 Открыть тему"; // Меняем замок на открытый
                  } else {
                      themeLockBtn.classList.remove('can-afford');
+                     // Опционально: можно показывать обратный отсчет и тут, 
+                     // но пока оставим статичный текст, чтобы не мельтешило в углу
+                     // themeLockBtn.textContent = `🔒 ${(REQ_THEME - screenTime)} сек`;
                  }
             }
         }
 
-        // --- Обработчики событий ---
+        // --- Обработчики (БЕЗ списания времени) ---
 
-        // 1. Покупка интерфейса (улет счетчика)
         buyBtn.addEventListener('click', () => {
-            if (screenTime >= COST_INTERFACE) {
-                screenTime -= COST_INTERFACE;
-                updateUI();
+            if (screenTime >= REQ_INTERFACE) {
+                // screenTime -= REQ_INTERFACE; <--- УБРАНО
+                
+                // Анимация
                 counterElement.classList.add('cornered');
                 buyBtn.style.opacity = '0';
                 setTimeout(() => buyBtn.remove(), 500);
+                
                 isInterfaceUnlocked = true;
             }
         });
 
-        // 2. Покупка переключателя темы
         themeLockBtn.addEventListener('click', () => {
-            if (!isThemeSwitcherUnlocked && screenTime >= COST_THEME) {
-                screenTime -= COST_THEME;
-                isThemeSwitcherUnlocked = true;
-                updateUI();
+            if (!isThemeSwitcherUnlocked && screenTime >= REQ_THEME) {
+                // screenTime -= REQ_THEME; <--- УБРАНО
                 
-                // Скрываем замок, показываем переключатель
+                isThemeSwitcherUnlocked = true;
+                
                 themeLockBtn.classList.add('hidden');
                 themeSwitchArea.classList.remove('hidden');
             }
         });
 
-        // 3. Переключение темы
         function toggleTheme() {
             isDarkMode = !isDarkMode;
             document.body.classList.toggle('dark-mode', isDarkMode);
-            
-            // Меняем иконки
             sunIcon.classList.toggle('hidden', isDarkMode);
             moonIcon.classList.toggle('hidden', !isDarkMode);
         }
