@@ -3,27 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Experience</title>
+    <title>Buy My Screen Time</title>
     <style>
-        /* Базовая светлая тема */
+        /* --- Базовая тема --- */
         body {
             background-color: #f0f0f0;
             color: #222222;
-            font-family: 'Courier New', monospace;
+            font-family: 'Courier New', monospace; /* Изначально "скучный" шрифт */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            overflow: hidden;
-            /* Плавная смена цветов */
             transition: background-color 0.5s ease, color 0.5s ease;
+            position: relative;
         }
 
         body.dark-mode {
             background-color: #1a1a1a;
             color: #ffffff;
+        }
+
+        /* --- Стилизация текста (покупаемая) --- */
+        body.styled-mode {
+            font-family: 'Georgia', serif; /* "Красивый" шрифт */
+        }
+        
+        /* Кнопки при стилизации становятся чуть изящнее */
+        body.styled-mode button {
+            font-style: italic;
         }
 
         /* --- Счётчик времени --- */
@@ -35,98 +44,144 @@
             top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 10;
+            z-index: 100;
             user-select: none;
             cursor: default;
             white-space: nowrap;
-            text-align: center;
         }
 
-        /* Состояние: куплен интерфейс (в углу) */
-        #time-counter.cornered {
-            top: 20px;
-            left: 20px;
-            font-size: 1.2rem;
-            transform: translate(0, 0);
+        /* Позиция справа сверху (внутри контейнера) */
+        #time-counter.cornered-right {
+            position: static; /* Становится частью потока в контейнере */
+            font-size: 1.5rem;
+            transform: none;
+            margin-bottom: 10px;
         }
 
-        /* --- Первая кнопка --- */
-        #buy-btn {
-            margin-top: 120px;
-            padding: 10px;
-            font-size: 1.2rem;
-            background: transparent;
-            border: none;
-            color: inherit;
-            cursor: pointer;
-            text-decoration: underline;
-            transition: opacity 0.3s;
-            opacity: 0.3;
+        /* Рамка для счетчика (покупается вместе со стилизацией) */
+        #time-counter.counter-bordered {
+            border: 2px solid currentColor;
+            padding: 5px 15px;
+            border-radius: 5px;
         }
 
-        #buy-btn:disabled {
-            cursor: not-allowed;
-            text-decoration: none;
-        }
-        
-        #buy-btn:not(:disabled) {
-            opacity: 1;
-            font-weight: bold;
-        }
-
-        /* --- Правый верхний угол --- */
+        /* --- Правый верхний контейнер --- */
         .top-right-container {
             position: absolute;
             top: 20px;
             right: 20px;
-            font-size: 1.2rem;
-            z-index: 20;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: flex-end; /* Прижимаем всё к правому краю */
+            z-index: 20;
         }
 
-        /* Элемент замка */
+        /* --- Название сайта (покупаемое) --- */
+        #site-title {
+            font-size: 4rem;
+            text-align: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            pointer-events: none; /* Чтобы сквозь него можно было кликать */
+            opacity: 0;
+            transition: opacity 1s ease;
+            z-index: 0;
+        }
+        #site-title.visible {
+            opacity: 0.1; /* Легкий фон */
+        }
+        body.dark-mode #site-title.visible {
+            opacity: 0.05;
+        }
+        /* Если куплена стилизация, заголовок становится ярче и красивее */
+        body.styled-mode #site-title.visible {
+            opacity: 1;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        /* --- Меню покупок (Shop Menu) --- */
+        #shop-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            margin-top: 50px;
+            z-index: 10;
+        }
+
+        /* Кнопки улучшений */
+        .upgrade-btn {
+            background: transparent;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 10px 20px;
+            text-decoration: underline;
+            opacity: 0.4;
+            transition: all 0.3s;
+        }
+
+        .upgrade-btn:disabled {
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+
+        .upgrade-btn:not(:disabled) {
+            opacity: 1;
+        }
+
+        /* Класс для рамок кнопок (покупаемый) */
+        .upgrade-btn.with-borders {
+            border: 2px solid currentColor; /* Цвет берется от текста */
+            text-decoration: none; /* Убираем подчеркивание, раз есть рамка */
+        }
+        .upgrade-btn.with-borders:hover {
+            background-color: rgba(128, 128, 128, 0.1);
+        }
+
+        /* Скрытые элементы */
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- Элементы управления темой --- */
         .shop-item-lock {
             opacity: 0.4;
             cursor: not-allowed;
-            transition: opacity 0.3s, transform 0.1s;
+            margin-top: 10px;
+            font-size: 1rem;
             user-select: none;
         }
-        
         .shop-item-lock.can-afford {
             opacity: 1;
             cursor: pointer;
             animation: pulse 2s infinite;
         }
         
+        .theme-toggle-icon {
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
-
-        .theme-toggle-icon {
-            cursor: pointer;
-            user-select: none;
-            transition: transform 0.2s;
-            display: inline-block;
-            font-size: 1.5rem;
-        }
-        .theme-toggle-icon:hover {
-            transform: scale(1.1);
-        }
-
-        .hidden {
-            display: none !important;
-        }
     </style>
 </head>
 <body>
 
-    <div id="time-counter">0 сек</div>
+    <div id="site-title">BUY MY SCREEN TIME</div>
 
-    <div class="top-right-container">
+    <div class="top-right-container" id="top-container">
         <div id="theme-lock" class="shop-item-lock">
             🔒 Тема (2 мин)
         </div>
@@ -136,157 +191,287 @@
             <span id="moon-icon" class="theme-toggle-icon hidden">🌙</span>
         </div>
     </div>
+
+    <div id="time-counter">0 сек</div>
     
-    <button id="buy-btn" disabled>Открыть интерфейс (30 сек)</button>
+    <button id="main-interface-btn" class="upgrade-btn" style="font-size: 1.5rem; font-weight: bold; margin-top: 0;" disabled>
+        Основной интерфейс (1 мин)
+    </button>
+
+    <div id="shop-menu" class="hidden">
+        <button id="btn-title" class="upgrade-btn" disabled>Название сайта (1.5 мин)</button>
+        <button id="btn-styling" class="upgrade-btn" disabled>Стилизация текста (3 мин)</button>
+        <button id="btn-borders" class="upgrade-btn" disabled>Покупка рамок (5 мин)</button>
+    </div>
 
     <script>
-        // --- ЗАГРУЗКА ИЗ ПАМЯТИ ---
-        // Пытаемся достать данные, если их нет — ставим значения по умолчанию
-        let screenTime = Number(localStorage.getItem('timeXP_value')) || 0;
-        let isInterfaceUnlocked = localStorage.getItem('timeXP_interface') === 'true';
-        let isThemeSwitcherUnlocked = localStorage.getItem('timeXP_themeUnlock') === 'true';
-        let isDarkMode = localStorage.getItem('timeXP_darkMode') === 'true';
+        // --- СОСТОЯНИЕ (State) ---
+        let state = {
+            screenTime: Number(localStorage.getItem('bmst_time')) || 0,
+            unlocks: {
+                mainInterface: localStorage.getItem('bmst_mainInterface') === 'true',
+                siteTitle: localStorage.getItem('bmst_siteTitle') === 'true',
+                styling: localStorage.getItem('bmst_styling') === 'true',
+                borders: localStorage.getItem('bmst_borders') === 'true',
+                themeSwitcher: localStorage.getItem('bmst_themeSwitcher') === 'true'
+            },
+            isDarkMode: localStorage.getItem('bmst_darkMode') === 'true'
+        };
 
-        // Требования
-        const REQ_INTERFACE = 30;
-        const REQ_THEME = 120; 
+        // --- ЦЕНЫ (в секундах) ---
+        const COSTS = {
+            mainInterface: 60,      // 1 мин
+            siteTitle: 90,          // 1.5 мин
+            themeSwitcher: 120,     // 2 мин
+            styling: 180,           // 3 мин
+            borders: 300            // 5 мин
+        };
 
-        // DOM
-        const counterElement = document.getElementById('time-counter');
-        const buyBtn = document.getElementById('buy-btn');
-        const themeLockBtn = document.getElementById('theme-lock');
-        const themeSwitchArea = document.getElementById('theme-switch-area');
-        const sunIcon = document.getElementById('sun-icon');
-        const moonIcon = document.getElementById('moon-icon');
-
-        // --- ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЯ ПРИ ЗАГРУЗКЕ ---
-        function init() {
-            // 1. Применяем тему сразу
-            if (isDarkMode) {
-                document.body.classList.add('dark-mode');
-                sunIcon.classList.add('hidden');
-                moonIcon.classList.remove('hidden');
-            }
-
-            // 2. Если интерфейс уже куплен
-            if (isInterfaceUnlocked) {
-                counterElement.classList.add('cornered');
-                if(buyBtn) buyBtn.remove(); // Удаляем кнопку, чтобы не мелькала
-            }
-
-            // 3. Если переключатель темы уже куплен
-            if (isThemeSwitcherUnlocked) {
-                themeLockBtn.classList.add('hidden');
-                themeSwitchArea.classList.remove('hidden');
-            }
-
-            // Обновляем текст счетчика сразу
-            counterElement.textContent = formatTime(screenTime);
-            updateUI();
-        }
-
-        // --- СОХРАНЕНИЕ ---
-        function saveProgress() {
-            localStorage.setItem('timeXP_value', screenTime);
-            localStorage.setItem('timeXP_interface', isInterfaceUnlocked);
-            localStorage.setItem('timeXP_themeUnlock', isThemeSwitcherUnlocked);
-            localStorage.setItem('timeXP_darkMode', isDarkMode);
-        }
-
-        // --- Форматирование времени ---
-        function formatTime(totalSeconds) {
-            if (totalSeconds === 0) return "0 сек";
-
-            const years = Math.floor(totalSeconds / (3600 * 24 * 365));
-            const days = Math.floor((totalSeconds % (3600 * 24 * 365)) / (3600 * 24));
-            const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-
-            let parts = [];
+        // --- DOM ЭЛЕМЕНТЫ ---
+        const els = {
+            counter: document.getElementById('time-counter'),
+            topContainer: document.getElementById('top-container'),
+            title: document.getElementById('site-title'),
+            body: document.body,
             
-            if (years > 0) parts.push(years + " г");
-            if (days > 0) parts.push(days + " д");
-            if (hours > 0) parts.push(hours + " ч");
-            if (minutes > 0) parts.push(minutes + " мин");
-            if (seconds > 0 || parts.length === 0) parts.push(seconds + " сек");
+            // Кнопки
+            btnMain: document.getElementById('main-interface-btn'),
+            menuGroup: document.getElementById('shop-menu'),
+            btnTitle: document.getElementById('btn-title'),
+            btnStyling: document.getElementById('btn-styling'),
+            btnBorders: document.getElementById('btn-borders'),
+            
+            // Тема
+            lockTheme: document.getElementById('theme-lock'),
+            areaTheme: document.getElementById('theme-switch-area'),
+            iconSun: document.getElementById('sun-icon'),
+            iconMoon: document.getElementById('moon-icon')
+        };
 
+        // --- ФУНКЦИИ СОХРАНЕНИЯ ---
+        function save() {
+            localStorage.setItem('bmst_time', state.screenTime);
+            localStorage.setItem('bmst_mainInterface', state.unlocks.mainInterface);
+            localStorage.setItem('bmst_siteTitle', state.unlocks.siteTitle);
+            localStorage.setItem('bmst_styling', state.unlocks.styling);
+            localStorage.setItem('bmst_borders', state.unlocks.borders);
+            localStorage.setItem('bmst_themeSwitcher', state.unlocks.themeSwitcher);
+            localStorage.setItem('bmst_darkMode', state.isDarkMode);
+        }
+
+        // --- ФОРМАТИРОВАНИЕ ВРЕМЕНИ ---
+        function formatTime(s) {
+            if (s === 0) return "0 сек";
+            const parts = [];
+            const y = Math.floor(s / 31536000);
+            const d = Math.floor((s % 31536000) / 86400);
+            const h = Math.floor((s % 86400) / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            const sec = s % 60;
+
+            if (y) parts.push(y + " г");
+            if (d) parts.push(d + " д");
+            if (h) parts.push(h + " ч");
+            if (m) parts.push(m + " мин");
+            if (sec || !parts.length) parts.push(sec + " сек");
             return parts.join(' ');
         }
 
-        // --- Основной цикл ---
+        // --- ИНИЦИАЛИЗАЦИЯ (восстановление вида) ---
+        function initUI() {
+            // Тема
+            if (state.isDarkMode) {
+                els.body.classList.add('dark-mode');
+                els.iconSun.classList.add('hidden');
+                els.iconMoon.classList.remove('hidden');
+            }
+
+            // Основной интерфейс
+            if (state.unlocks.mainInterface) {
+                applyMainInterfaceUnlock(false); // false = без анимации
+            }
+
+            // Название сайта
+            if (state.unlocks.siteTitle) {
+                els.title.classList.add('visible');
+                els.btnTitle.innerHTML = "Название сайта [КУПЛЕНО]";
+                els.btnTitle.disabled = true;
+            }
+
+            // Стилизация
+            if (state.unlocks.styling) {
+                els.body.classList.add('styled-mode');
+                els.counter.classList.add('counter-bordered');
+                els.btnStyling.innerHTML = "Стилизация [КУПЛЕНО]";
+                els.btnStyling.disabled = true;
+            }
+
+            // Рамки
+            if (state.unlocks.borders) {
+                applyBorders();
+                els.btnBorders.innerHTML = "Покупка рамок [КУПЛЕНО]";
+                els.btnBorders.disabled = true;
+            }
+
+            // Разблокировка темы
+            if (state.unlocks.themeSwitcher) {
+                els.lockTheme.classList.add('hidden');
+                els.areaTheme.classList.remove('hidden');
+            }
+
+            updateCheck();
+        }
+
+        // --- ПРИМЕНЕНИЕ ЭФФЕКТОВ ---
+        function applyMainInterfaceUnlock(animate = true) {
+            // Скрываем кнопку покупки главного интерфейса
+            els.btnMain.classList.add('hidden');
+            // Показываем меню
+            els.menuGroup.classList.remove('hidden');
+
+            if (animate) {
+                // Анимация перемещения счетчика в правый угол
+                // Сначала просто добавляем класс для CSS transition
+                // Но так как мы меняем DOM-родителя, лучше сделать мгновенно для простоты, 
+                // или использовать FLIP анимацию. Здесь сделаем просто перенос.
+                els.topContainer.prepend(els.counter);
+                els.counter.classList.add('cornered-right');
+            } else {
+                // Без анимации (при перезагрузке)
+                els.topContainer.prepend(els.counter);
+                els.counter.classList.add('cornered-right');
+            }
+        }
+
+        function applyBorders() {
+            // Находим все кнопки в меню и добавляем класс
+            const buttons = document.querySelectorAll('.upgrade-btn');
+            buttons.forEach(btn => btn.classList.add('with-borders'));
+        }
+
+        // --- ГЛАВНЫЙ ЦИКЛ ---
         setInterval(() => {
             if (!document.hidden) {
-                screenTime++;
-                updateUI();
-                saveProgress(); // Сохраняем каждую секунду
+                state.screenTime++;
+                els.counter.textContent = formatTime(state.screenTime);
+                updateCheck();
+                save();
             }
         }, 1000);
 
-        function updateUI() {
-            counterElement.textContent = formatTime(screenTime);
+        // --- ПРОВЕРКА ДОСТУПНОСТИ КНОПОК ---
+        function updateCheck() {
+            const t = state.screenTime;
 
-            // Кнопка интерфейса (проверяем существование, т.к. могли удалить)
-            if (!isInterfaceUnlocked && buyBtn) {
-                if (screenTime >= REQ_INTERFACE) {
-                    buyBtn.disabled = false;
+            // Кнопка "Основной интерфейс" (если еще не куплена)
+            if (!state.unlocks.mainInterface) {
+                if (t >= COSTS.mainInterface) {
+                    els.btnMain.disabled = false;
                 } else {
-                    buyBtn.disabled = true;
+                    els.btnMain.disabled = true;
+                }
+            } else {
+                // Если основной интерфейс куплен, проверяем остальные кнопки
+                
+                // Название
+                if (!state.unlocks.siteTitle) {
+                    els.btnTitle.disabled = (t < COSTS.siteTitle);
+                }
+
+                // Стилизация
+                if (!state.unlocks.styling) {
+                    els.btnStyling.disabled = (t < COSTS.styling);
+                }
+
+                // Рамки
+                if (!state.unlocks.borders) {
+                    els.btnBorders.disabled = (t < COSTS.borders);
                 }
             }
 
-            // Замок темы
-            if (!isThemeSwitcherUnlocked) {
-                 if (screenTime >= REQ_THEME) {
-                     themeLockBtn.classList.add('can-afford');
-                     themeLockBtn.textContent = "🔓 Открыть тему";
-                 } else {
-                     themeLockBtn.classList.remove('can-afford');
-                 }
+            // Тема (не зависит от меню, висит в углу)
+            if (!state.unlocks.themeSwitcher) {
+                if (t >= COSTS.themeSwitcher) {
+                    els.lockTheme.classList.add('can-afford');
+                    els.lockTheme.textContent = "🔓 Открыть тему";
+                } else {
+                    els.lockTheme.classList.remove('can-afford');
+                }
             }
         }
 
-        // --- Обработчики ---
+        // --- ОБРАБОТЧИКИ КЛИКОВ ---
 
-        if(buyBtn) {
-            buyBtn.addEventListener('click', () => {
-                if (screenTime >= REQ_INTERFACE) {
-                    counterElement.classList.add('cornered');
-                    buyBtn.style.opacity = '0';
-                    buyBtn.style.cursor = 'default';
-                    
-                    isInterfaceUnlocked = true;
-                    saveProgress(); // Сохраняем покупку
-
-                    setTimeout(() => buyBtn.remove(), 500);
-                }
-            });
-        }
-
-        themeLockBtn.addEventListener('click', () => {
-            if (!isThemeSwitcherUnlocked && screenTime >= REQ_THEME) {
-                isThemeSwitcherUnlocked = true;
-                saveProgress(); // Сохраняем покупку
-
-                themeLockBtn.classList.add('hidden');
-                themeSwitchArea.classList.remove('hidden');
+        // 1. Основной интерфейс
+        els.btnMain.addEventListener('click', () => {
+            if (state.screenTime >= COSTS.mainInterface) {
+                state.unlocks.mainInterface = true;
+                applyMainInterfaceUnlock(true);
+                save();
+                updateCheck();
             }
         });
 
+        // 2. Название сайта
+        els.btnTitle.addEventListener('click', () => {
+            if (state.screenTime >= COSTS.siteTitle && !state.unlocks.siteTitle) {
+                state.unlocks.siteTitle = true;
+                els.title.classList.add('visible');
+                
+                els.btnTitle.innerHTML = "Название сайта [КУПЛЕНО]";
+                els.btnTitle.disabled = true;
+                save();
+            }
+        });
+
+        // 3. Стилизация
+        els.btnStyling.addEventListener('click', () => {
+            if (state.screenTime >= COSTS.styling && !state.unlocks.styling) {
+                state.unlocks.styling = true;
+                els.body.classList.add('styled-mode');
+                els.counter.classList.add('counter-bordered');
+                
+                els.btnStyling.innerHTML = "Стилизация [КУПЛЕНО]";
+                els.btnStyling.disabled = true;
+                save();
+            }
+        });
+
+        // 4. Рамки
+        els.btnBorders.addEventListener('click', () => {
+            if (state.screenTime >= COSTS.borders && !state.unlocks.borders) {
+                state.unlocks.borders = true;
+                applyBorders();
+                
+                els.btnBorders.innerHTML = "Покупка рамок [КУПЛЕНО]";
+                els.btnBorders.disabled = true;
+                save();
+            }
+        });
+
+        // 5. Покупка Темы
+        els.lockTheme.addEventListener('click', () => {
+            if (!state.unlocks.themeSwitcher && state.screenTime >= COSTS.themeSwitcher) {
+                state.unlocks.themeSwitcher = true;
+                els.lockTheme.classList.add('hidden');
+                els.areaTheme.classList.remove('hidden');
+                save();
+            }
+        });
+
+        // 6. Переключение темы
         function toggleTheme() {
-            isDarkMode = !isDarkMode;
-            document.body.classList.toggle('dark-mode', isDarkMode);
-            sunIcon.classList.toggle('hidden', isDarkMode);
-            moonIcon.classList.toggle('hidden', !isDarkMode);
-            
-            saveProgress(); // Сохраняем выбор темы
+            state.isDarkMode = !state.isDarkMode;
+            els.body.classList.toggle('dark-mode', state.isDarkMode);
+            els.iconSun.classList.toggle('hidden', state.isDarkMode);
+            els.iconMoon.classList.toggle('hidden', !state.isDarkMode);
+            save();
         }
+        els.iconSun.addEventListener('click', toggleTheme);
+        els.iconMoon.addEventListener('click', toggleTheme);
 
-        sunIcon.addEventListener('click', toggleTheme);
-        moonIcon.addEventListener('click', toggleTheme);
-
-        // Запуск инициализации при загрузке страницы
-        init();
+        // Старт
+        initUI();
 
     </script>
 </body>
